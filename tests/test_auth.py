@@ -8,6 +8,10 @@ async def test_register(ac: AsyncClient):
     response = await ac.post("v1/auth/register", json=VALID_CREDS)
     assert response.status_code == 201
 
+async def test_register_existed_user(ac: AsyncClient):
+    response = await ac.post("v1/auth/register", json=VALID_CREDS)
+    assert response.status_code == 400
+
 async def test_login(ac: AsyncClient):
     response = await ac.post("v1/auth/login", json=VALID_CREDS)
     assert response.status_code == 200

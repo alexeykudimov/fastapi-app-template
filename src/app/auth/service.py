@@ -32,9 +32,6 @@ class AuthService:
         stmt = select(User).where(User.username == username)
         user = (await self.db.execute(stmt)).scalar_one_or_none()
 
-        if not user:
-            raise HTTPException(status_code=404, detail="This user doesn't exist")
-
         return user
     
     async def create_user(self, **kwargs) -> User:
@@ -47,12 +44,20 @@ class AuthService:
     async def authenticate(self, payload: AuthIn) -> AuthOut:
         user = await self.get_user_by_username(payload.username)
 
+        if not user:
+            raise HTTPException(status_code=404, detail="This user doesn't exist")
+
         if not verify_password(payload.password, user.hashed_password):
             raise HTTPException(status_code=403, detail="Invalid password")
 
         return AuthOut(access_token=create_token(str(user.id)))
     
     async def register(self, payload: AuthIn) -> AuthOut:
+        user = await self.get_user_by_username(payload.username)
+
+        if user:
+            raise HTTPException(status_code=400, detail="This user already exists!")
+        
         user = await self.create_user(
             username=payload.username,
             hashed_password=get_password_hash(payload.password))
